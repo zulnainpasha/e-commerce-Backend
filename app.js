@@ -44,7 +44,3 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-// zulnainpasha1_db_user
-// 1IZ9tjQDgZEAjBLz
-
-// mongodb+srv://zulnainpasha1_db_user:<db_password>@aquarium.parryxl.mongodb.net/
