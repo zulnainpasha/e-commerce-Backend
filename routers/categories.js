@@ -1,74 +1,81 @@
 const express = require("express");
 const { Category } = require("../models/category.js");
 const router = express.Router();
+const authorize = require("../helpers/authorize");
 
-router.get("/", async (req, res) => {
-  const categoryList = await Category.find();
-
-  if (!categoryList) {
-    return res.status(500).json({ success: false });
-  }
-  res.send(categoryList);
-});
-
-router.get("/:id", async (req, res) => {
-  const category = await Category.findById(req.params.id);
-  if (!category) {
-    return res
-      .status(404)
-      .json({ success: false, message: "category not found!" });
-  } else {
-    res.status(201).send(category);
+router.get("/", async (req, res, next) => {
+  try {
+    const categoryList = await Category.find();
+    if (!categoryList) return res.status(500).json({ success: false });
+    res.send(categoryList);
+  } catch (err) {
+    next(err);
   }
 });
 
-router.post("/", async (req, res) => {
-  let category = new Category({
-    name: req.body.name,
-    icon: req.body.icon,
-    color: req.body.color,
-  });
-  category = await category.save();
-
-  if (!category) {
-    return res.status(500).send("Cannot create a category!!!");
+router.get("/:id", async (req, res, next) => {
+  try {
+    const category = await Category.findById(req.params.id);
+    if (!category) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Category not found!" });
+    }
+    res.status(200).send(category); // ✅ fixed: 201 → 200
+  } catch (err) {
+    next(err);
   }
-  res.send(category);
 });
 
-router.delete("/:id", (req, res) => {
-  Category.findByIdAndDelete(req.params.id)
-    .then((category) => {
-      if (category) {
-        return res
-          .status(200)
-          .json({ success: true, message: "Succesfully Deleted" });
-      } else
-        return res
-          .status(404)
-          .json({ success: false, message: "Category not found" });
-    })
-    .catch((err) => {
-      return res.status(400).json({ success: false, error: err });
-    });
-});
-
-router.put("/:id", async (req, res) => {
-  const category = await Category.findByIdAndUpdate(
-    req.params.id,
-    {
+router.post("/", authorize("admin", "manager"), async (req, res, next) => {
+  try {
+    let category = new Category({
       name: req.body.name,
       icon: req.body.icon,
       color: req.body.color,
-    },
-    { new: true },
-  );
+    });
+    category = await category.save();
+    if (!category) return res.status(500).send("Cannot create a category!");
+    res.status(201).send(category);
+  } catch (err) {
+    next(err);
+  }
+});
 
-  if (!category) {
-    return res
-      .status(404)
-      .json({ success: false, message: "Couldnt update the file" });
-  } else return res.send(category);
+router.put("/:id", authorize("admin", "manager"), async (req, res, next) => {
+  try {
+    const category = await Category.findByIdAndUpdate(
+      req.params.id,
+      {
+        name: req.body.name,
+        icon: req.body.icon,
+        color: req.body.color,
+      },
+      { new: true },
+    );
+    if (!category) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Couldn't update the category" });
+    }
+    res.status(200).send(category);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/:id", authorize("admin"), async (req, res, next) => {
+  try {
+    const category = await Category.findByIdAndDelete(req.params.id);
+    if (!category) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Category not found" });
+    }
+    res.status(200).json({ success: true, message: "Successfully Deleted" });
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = router;
