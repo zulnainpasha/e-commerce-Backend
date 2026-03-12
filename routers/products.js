@@ -76,44 +76,32 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post(
-  "/",
-  authorize("admin", "manager"),
-  uploadOptions.single("image"),
-  async (req, res, next) => {
-    try {
-      const category = await Category.findById(req.body.category);
-      if (!category) return res.status(400).send("Invalid category");
+router.post("/", authorize("admin", "manager"), async (req, res, next) => {
+  try {
+    const category = await Category.findById(req.body.category);
+    if (!category) return res.status(400).send("Invalid category");
 
-      const file = req.file;
-      if (!file) return res.status(400).send("No image in the request");
+    let product = new Product({
+      name: req.body.name,
+      description: req.body.description,
+      richDescription: req.body.richDescription,
+      image: req.body.image,
+      brand: req.body.brand,
+      price: req.body.price,
+      category: req.body.category,
+      countInStock: req.body.countInStock,
+      rating: req.body.rating,
+      numReviews: req.body.numReviews,
+      isFeatured: req.body.isFeatured,
+    });
 
-      const fileName = req.file.filename;
-      const basepath = `${req.protocol}://${req.get("host")}/public/uploads/`;
-
-      let product = new Product({
-        name: req.body.name,
-        description: req.body.description,
-        richDescription: req.body.richDescription,
-        image: `${basepath}${fileName}`,
-        brand: req.body.brand,
-        price: req.body.price,
-        category: req.body.category,
-        countInStock: req.body.countInStock,
-        rating: req.body.rating,
-        numReviews: req.body.numReviews,
-        isFeatured: req.body.isFeatured,
-      });
-
-      product = await product.save();
-      if (!product)
-        return res.status(500).send("The product cannot be created!");
-      res.status(201).send(product);
-    } catch (err) {
-      next(err);
-    }
-  },
-);
+    product = await product.save();
+    if (!product) return res.status(500).send("The product cannot be created!");
+    res.status(201).send(product);
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.put("/:id", authorize("admin", "manager"), async (req, res, next) => {
   try {
